@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order — Cocoa & Crumb</title>
+  <link rel="stylesheet" href="order.css">
+</head>
+
+<body>
+  <nav>
+    <div class="logo">Cocoa<span>&</span>Crumb</div>
+    <a href="index.html" class="back-link">← Back to menu</a>
+    <a href="admin.html" class="back-link">View Orders →</a>
+  </nav>
+
+  <div class="wrap">
+
+    <div id="order-flow">
+      <div class="page-head">
+        <span class="eyebrow">Step into the kitchen</span>
+        <h1>Place your order</h1>
+        <p>Pick a treat, tell us where to send it — that's it.</p>
+      </div>
+
+      <div class="layout">
+        <div class="panel">
+
+          <div class="field-group">
+            <label class="field-label">What are you craving?</label>
+            <div class="toggle-row">
+              <div class="toggle-btn active" data-type="Brownie">🍫 Brownies</div>
+              <div class="toggle-btn" data-type="Cupcake">🧁 Cupcakes</div>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Choose a flavor <span class="field-sub">— pick one</span></label>
+            <div class="chip-grid" id="flavor-grid"></div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Quantity</label>
+            <div class="stepper">
+              <button class="step-btn" id="dec">–</button>
+              <span class="step-val" id="qty">1</span>
+              <button class="step-btn" id="inc">+</button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Pickup or delivery?</label>
+            <div class="delivery-toggle">
+              <div class="toggle-btn active" data-mode="Pickup">🏠 Pickup</div>
+              <div class="toggle-btn" data-mode="Delivery">🚗 Delivery</div>
+            </div>
+            <div id="address-field">
+              <input type="text" id="address" placeholder="Delivery address">
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Your details</label>
+            <div class="two-col" style="margin-bottom:14px;">
+              <input type="text" id="name" placeholder="Full name">
+              <input type="tel" id="phone" placeholder="Phone number">
+            </div>
+            <input type="email" id="email" placeholder="Email (optional)" style="margin-bottom:14px;">
+            <textarea id="notes" placeholder="Anything we should know? Allergies, a note for the box..."></textarea>
+          </div>
+
+          <button class="submit-btn" id="submit-btn">Confirm Order</button>
+        </div>
+
+        <div class="summary">
+          <h3>Order Summary</h3>
+          <div id="summary-lines">
+            <div class="summary-line empty">Your order will appear here</div>
+          </div>
+          <div class="summary-total">
+            <span>Total</span>
+            <span id="summary-total">$0.00</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="confirm-screen" id="confirm-screen">
+      <div class="confirm-icon">✓</div>
+      <h2 id="confirm-name">Thank you!</h2>
+      <p>Your order is being prepared and will be ready soon. We'll reach out to confirm the details.</p>
+      <div class="confirm-summary" id="confirm-summary"></div>
+      <a href="index.html" class="back-link" style="font-weight:700;">← Back to the menu</a>
+    </div>
+
+  </div>
+
+  <div class="mobile-summary-bar" id="mobile-bar">
+    <span id="mobile-bar-text">No item selected</span>
+    <strong id="mobile-bar-total">$0.00</strong>
+  </div>
+
+  <script>
+    const brownies = [
+      { name: 'Fudge Brownies', emoji: '🍫', price: 4.50 },
+      { name: 'Walnut Brownies', emoji: '🍫', price: 4.75 },
+      { name: 'Chocolate Brownies', emoji: '🍫', price: 5.00 },
+      { name: 'ChocoChip Brownies ', emoji: '🍫', price: 5.25 },
+      { name: 'Nuts Brownies', emoji: '🍫', price: 4.95 },
+      { name: 'Triple Chocolate Brownies', emoji: '🍫', price: 4.95 },
+    ];
+    const cupcakes = [
+      { name: 'Vanilla Cupcakes', emoji: '🧁', price: 3.75 },
+      { name: 'Chocolate Cupcakes', emoji: '🧁', price: 3.95 },
+      { name: 'Mango Cupcakes', emoji: '🧁', price: 3.95 },
+      { name: 'Strawberry Cupcakes', emoji: '🧁', price: 3.95 },
+      { name: 'Blueberry Cupcakes', emoji: '🧁', price: 4.10 },
+      { name: 'RedVelvet Cupcakes', emoji: '🧁', price: 4.10 },
+    ];
+
+    let state = {
+      type: 'Brownie',
+      flavor: null,
+      qty: 1,
+      mode: 'Pickup',
+    };
+
+    const flavorGrid = document.getElementById('flavor-grid');
+    const params = new URLSearchParams(window.location.search);
+    const preselect = params.get('item');
+
+    function renderFlavors() {
+      const list = state.type === 'Brownie' ? brownies : cupcakes;
+      flavorGrid.innerHTML = '';
+      list.forEach(item => {
+        const chip = document.createElement('div');
+        chip.className = 'chip';
+        chip.dataset.name = item.name;
+        chip.dataset.price = item.price;
+        chip.innerHTML = `<span>${item.emoji}</span>${item.name}`;
+        if (state.flavor === item.name) chip.classList.add('active');
+        chip.addEventListener('click', () => {
+          document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          state.flavor = item.name;
+          state.price = item.price;
+          updateSummary();
+        });
+        flavorGrid.appendChild(chip);
+      });
+    }
+
+    // type toggle
+    document.querySelectorAll('[data-type]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-type]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.type = btn.dataset.type;
+        state.flavor = null;
+        renderFlavors();
+        updateSummary();
+      });
+    });
+
+    // delivery/pickup toggle
+    const addressField = document.getElementById('address-field');
+    document.querySelectorAll('[data-mode]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-mode]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.mode = btn.dataset.mode;
+        addressField.classList.toggle('show', state.mode === 'Delivery');
+        updateSummary();
+      });
+    });
+
+    // stepper
+    const qtyEl = document.getElementById('qty');
+    document.getElementById('inc').addEventListener('click', () => {
+      state.qty++; qtyEl.textContent = state.qty; updateSummary();
+    });
+    document.getElementById('dec').addEventListener('click', () => {
+      if (state.qty > 1) { state.qty--; qtyEl.textContent = state.qty; updateSummary(); }
+    });
+
+    // summary + validation
+    const summaryLines = document.getElementById('summary-lines');
+    const summaryTotal = document.getElementById('summary-total');
+    const submitBtn = document.getElementById('submit-btn');
+    const mobileBar = document.getElementById('mobile-bar');
+    const mobileBarText = document.getElementById('mobile-bar-text');
+    const mobileBarTotal = document.getElementById('mobile-bar-total');
+
+    function updateSummary() {
+      const name = document.getElementById('name').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const address = document.getElementById('address').value.trim();
+
+      if (state.flavor) {
+        const total = (state.price * state.qty).toFixed(2);
+        summaryLines.innerHTML = `
+        <div class="summary-line"><span>${state.qty} × ${state.flavor}</span><span>$${total}</span></div>
+        <div class="summary-line"><span>Fulfillment</span><span>${state.mode}</span></div>
+      `;
+        summaryTotal.textContent = '$' + total;
+        mobileBarText.textContent = `${state.qty} × ${state.flavor}`;
+        mobileBarTotal.textContent = '$' + total;
+        mobileBar.style.display = 'flex';
+      } else {
+        summaryLines.innerHTML = `<div class="summary-line empty">Your order will appear here</div>`;
+        summaryTotal.textContent = '$0.00';
+        mobileBar.style.display = 'none';
+      }
+
+      const valid = state.flavor && name && phone && (state.mode === 'Pickup' || address);
+      submitBtn.disabled = !valid;
+    }
+
+    ['name', 'phone', 'email', 'address', 'notes'].forEach(id => {
+      document.getElementById(id).addEventListener('input', updateSummary);
+    });
+
+    // preselect from landing page click
+    if (preselect) {
+      const inBrownies = brownies.find(b => b.name === preselect);
+      const inCupcakes = cupcakes.find(c => c.name === preselect);
+      if (inCupcakes) {
+        document.querySelector('[data-type="Cupcake"]').click();
+      }
+      renderFlavors();
+      setTimeout(() => {
+        const target = [...document.querySelectorAll('.chip')].find(c => c.dataset.name === preselect);
+        if (target) target.click();
+      }, 0);
+    } else {
+      renderFlavors();
+    }
+
+    // submit -> confirmation
+    submitBtn.addEventListener('click', () => {
+      if (submitBtn.disabled) return;
+      const name = document.getElementById('name').value.trim();
+      const total = (state.price * state.qty).toFixed(2);
+
+      const orders = JSON.parse(localStorage.getItem("orders")) || [];
+
+orders.push({
+  name:document.getElementById('name').value,
+  phone:document.getElementById('phone').value,
+  email:document.getElementById('email').email,
+  address:document.getElementById('address').value,
+  notes:document.getElementById('notes').value,
+  type: state.type,
+  flavor: state.flavor,
+  qty: state.qty,
+  mode: state.mode,
+  total: total,
+  time: new Date().toLocaleString()
+});
+
+localStorage.setItem("orders", JSON.stringify(orders));
+
+
+      document.getElementById('confirm-name').textContent = `Thank you, ${name.split(' ')[0]}!`;
+      document.getElementById('confirm-summary').innerHTML = `
+      <div><span>${state.qty} × ${state.flavor}</span><span>$${total}</span></div>
+      <div><span>Fulfillment</span><span>${state.mode}</span></div>
+      <div><span>Total</span><strong>$${total}</strong></div>
+    `;
+
+      document.getElementById('order-flow').style.display = 'none';
+      document.getElementById('confirm-screen').classList.add('show');
+      mobileBar.style.display = 'none';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    
+  </script>
+
+</body>
+
+</html>

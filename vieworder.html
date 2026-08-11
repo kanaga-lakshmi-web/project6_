@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Orders — Cocoa & Crumb</title>
+  <link rel="stylesheet" href="vieworder.css">
+</head>
+<body>
+
+<nav>
+  <div class="logo">Cocoa<span>&</span>Crumb</div>
+  <a href="index.html" class="back-link">← Back to menu</a>
+  <button id="logoutbtn" class="logout-btn">Logout</button>
+</nav>
+
+<div class="wrap">
+  <h1>Admin Dashboard</h1>
+  <p class="sub">Manage Customer Orders...</p>
+
+  <input
+    type="text"
+    id="search"
+    placeholder="🔍 Search by customer, phone or item..."
+    class="search-box">
+
+
+
+
+  <div class="dashboard-cards">
+
+    <div class="card">
+        <h3 id="totalOrders">0</h3>
+        <p>Total Orders</p>
+    </div>
+
+    <div class="card">
+        <h3 id="pickupOrders">0</h3>
+        <p>Pickup</p>
+    </div>
+
+    <div class="card">
+        <h3 id="deliveryOrders">0</h3>
+        <p>Delivery</p>
+    </div>
+
+</div>
+
+
+
+
+
+
+  <div id="orders-list"></div>
+
+  <button id="clear-all" class="danger-btn">Cancel All Orders</button>
+</div>
+</body>
+</html>
+
+<script>
+
+  const loggedIn = sessionStorage.getItem("adminLogin");
+  if(loggedIn !="true"){
+    window.location.href="admin.html";
+  }
+
+const list = document.getElementById("orders-list");
+const clearAll = document.getElementById("clear-all");
+const search = document.getElementById("search");
+search.addEventListener("keyup",()=>{
+
+const value = search.value.toLowerCase();
+
+document.querySelectorAll(".order-card").forEach(card=>{
+
+const text = card.innerText.toLowerCase();
+
+card.style.display =
+text.includes(value)
+?
+"block"
+:
+"none";
+
+});
+
+});
+
+let orders = JSON.parse(localStorage.getItem("orders")) || [];
+
+function render() {
+  document.getElementById("totalOrders").textContent = orders.length;
+
+document.getElementById("pickupOrders").textContent =
+orders.filter(o => o.mode === "Pickup").length;
+
+document.getElementById("deliveryOrders").textContent =
+orders.filter(o => o.mode === "Delivery").length
+
+  list.innerHTML = "";
+
+  if (!orders.length) {
+    list.innerHTML = "<p>No orders yet.</p>";
+    return;
+  }
+
+  orders.forEach((o, i) => {
+    const card = document.createElement("div");
+    card.className = "order-card";
+
+    card.innerHTML = `
+<div class="order-row">
+    <strong>${o.qty} × ${o.flavor}</strong>
+    <span>$${o.total}</span>
+</div>
+
+<div class="order-row">
+    <span><b>Customer</b></span>
+    <span>${o.name}</span>
+</div>
+
+<div class="order-row">
+    <span><b>Phone</b></span>
+    <span>${o.phone}</span>
+</div>
+
+<div class="order-row">
+    <span><b>Email</b></span>
+    <span>${o.email || "-"}</span>
+</div>
+
+<div class="order-row">
+    <span><b>Address</b></span>
+    <span>${o.mode === "Delivery" ? o.address : "Pickup"}</span>
+</div>
+
+<div class="order-row">
+    <span><b>Notes</b></span>
+    <span>${o.notes || "-"}</span>
+</div>
+
+<div class="order-row">
+    <span><b>Type</b></span>
+    <span>${o.type}</span>
+</div>
+
+<div class="order-row">
+    <span><b>Mode</b></span>
+    <span>${o.mode}</span>
+</div>
+
+<div class="order-row">
+    <span><b>Ordered At</b></span>
+    <span>${o.time}</span>
+</div>
+
+<div class="order-row">
+    <span><b>Status</b></span>
+    <span>${o.status}</span>
+</div>
+
+<button class="complete-btn">Completed</button>
+<button class="cancel-btn">Cancel</button>
+`;
+
+
+    card.querySelector("button").onclick = () => {
+      orders.splice(i, 1);
+      localStorage.setItem("orders", JSON.stringify(orders));
+      render();
+    };
+
+    list.appendChild(card);
+  });
+}
+
+const logoutbtn = document.getElementById("logoutbtn");
+logoutbtn.addEventListener("click",()=>{
+  if(confirm("Are you sure you want to logout?")){
+    sessionStorage.removeItem("adminLogin");
+    window.location.href="admin.html";
+
+  }
+})
+clearAll.onclick = () => {
+  if (confirm("Cancel all orders?")) {
+    localStorage.removeItem("orders");
+    orders = [];
+    render();
+  }
+};
+
+render();
+</script>

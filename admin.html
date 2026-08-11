@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login | Cocoa & Crumb</title>
+
+    <link rel="stylesheet" href="admin.css">
+</head>
+
+<body>
+
+    <nav>
+        <div class="logo">
+            Cocoa<span>&</span>Crumb
+        </div>
+
+        <a href="index.html" class="back-link">
+            ← Back to Menu
+        </a>
+    </nav>
+
+    <div class="login-container">
+
+        <div class="login-card">
+
+            <div class="icon">
+                🔐
+            </div>
+
+            <h1>Admin Login</h1>
+
+            <p class="subtitle">
+                Only authorized staff can access customer orders.
+            </p>
+
+            <div class="input-group">
+                <label>Username</label>
+                <input
+                    type="text"
+                    id="username"
+                    placeholder="Enter username">
+            </div>
+
+            <div class="input-group">
+                <label>Password</label>
+                <input
+                    type="password"
+                    id="password"
+                    placeholder="Enter password">
+            </div>
+
+            <button id="loginBtn">
+                Login
+            </button>
+
+            <p id="error" class="error-msg"></p>
+
+        </div>
+
+    </div>
+
+    
+
+</body>
+
+<script>
+    const ADMIN_USERNAME = "admin";
+const ADMIN_PASSWORD = "12345";
+
+const loginBtn = document.getElementById("loginBtn");
+const error = document.getElementById("error");
+
+loginBtn.addEventListener("click", login);
+
+document.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+        login();
+    }
+});
+
+function login() {
+
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    if (username === "" || password === "") {
+        error.textContent = "Please enter username and password.";
+        return;
+    }
+
+    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+
+        // Admin Login Success
+        sessionStorage.setItem("adminLogin", "true");
+
+        // Redirect to Admin Orders Page
+        window.location.href = "vieworder.html";
+
+    } else {
+
+        error.textContent = "Invalid username or password.";
+
+        document.getElementById("password").value = "";
+
+    }
+}
+
+</script>
+
+</html>
